@@ -6,7 +6,7 @@ This repository demonstrates a bug in Prisma's PgAdapter where 2-digit years in 
 
 When using `@prisma/adapter-pg`, historical dates with 2-digit years (e.g., years 31-99 AD) are incorrectly processed:
 
-- **Years 31**: Throws `RangeError: Invalid time value` 
+- **Years <32**: Throws `RangeError: Invalid time value`
 - **Years 32-49**: Incorrectly converted to 20xx (e.g., 32 → 2032, 40 → 2040)
 - **Years 50-99**: Incorrectly converted to 19xx (e.g., 50 → 1950)
 - **Years 100+**: Work correctly (e.g., 120 → 120)
@@ -16,12 +16,14 @@ When using `@prisma/adapter-pg`, historical dates with 2-digit years (e.g., year
 ## Test Setup
 
 The test uses:
-- **Prisma Client**: v6.16.0 with both PgAdapter and traditional connection
+
+- **Prisma Client**: v6.16.2 with both PgAdapter and traditional connection
 - **Database**: PostgreSQL 17 in Docker
 - **Test Framework**: TypeScript with Zod validation
 - **Test Cases**: Years 31, 32, 40, 50, and 120
 
 The test runs two scenarios:
+
 1. **PgAdapter**: Using `@prisma/adapter-pg` for connection (shows bug)
 2. **Traditional**: Using standard Prisma Client connection (works correctly)
 
@@ -42,6 +44,7 @@ docker compose up
 ```
 
 This will:
+
 1. Start PostgreSQL container
 2. Build and run the test application
 3. Push the Prisma schema to the database
@@ -105,12 +108,12 @@ The test creates JavaScript Date objects with 4-digit years and validates them w
 
 ```typescript
 const testDates = [
-  new Date('0031-01-01T00:00:00.000Z'),
-  new Date('0032-01-01T00:00:00.000Z'), 
-  new Date('0040-01-01T00:00:00.000Z'),
-  new Date('0050-01-01T00:00:00.000Z'),
-  new Date('0120-01-01T00:00:00.000Z')
-]
+  new Date("0031-01-01T00:00:00.000Z"),
+  new Date("0032-01-01T00:00:00.000Z"),
+  new Date("0040-01-01T00:00:00.000Z"),
+  new Date("0050-01-01T00:00:00.000Z"),
+  new Date("0120-01-01T00:00:00.000Z"),
+];
 ```
 
 Each test performs both CREATE and UPDATE operations, then compares the original year with the retrieved year to detect corruption.
@@ -127,6 +130,7 @@ model TestData {
 ## Impact
 
 This bug affects applications using PgAdapter that deal with:
+
 - Historical data (ancient dates, genealogy, archaeology)
 - Legacy system migrations
 - Any domain requiring accurate historical date representation
@@ -139,7 +143,7 @@ Use the traditional Prisma connection method instead of PgAdapter for applicatio
 
 ## Environment
 
-- **Prisma**: 6.16.0
+- **Prisma**: 6.16.2
 - **Node.js**: 24
 - **PostgreSQL**: 17
 - **Adapter**: @prisma/adapter-pg
