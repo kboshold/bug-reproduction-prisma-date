@@ -5,7 +5,8 @@ import chalk from 'chalk'
 
 const connectionString = `${process.env.DATABASE_URL}`
 const adapter = new PrismaPg({ connectionString })
-const prisma = new PrismaClient({ adapter })
+const prismaWithAdapter = new PrismaClient({ adapter })
+const prismaTraditional = new PrismaClient()
 
 const dateSchema = z.date()
 
@@ -17,7 +18,7 @@ const testDates = [
   new Date('0120-01-01T00:00:00.000Z')
 ]
 
-async function testCreateDate(inputDate: Date) {
+async function testCreateDate(inputDate: Date, prisma: PrismaClient) {
   try {
     const validatedDate = dateSchema.parse(inputDate)
     
@@ -45,7 +46,7 @@ async function testCreateDate(inputDate: Date) {
   }
 }
 
-async function testUpdateDate(inputDate: Date) {
+async function testUpdateDate(inputDate: Date, prisma: PrismaClient) {
   try {
     const validatedDate = dateSchema.parse(inputDate)
     
@@ -81,14 +82,24 @@ async function testUpdateDate(inputDate: Date) {
 async function main() {
   console.log(chalk.blue.bold('\n🔍 Prisma Date Bug Reproduction Test\n'))
   
+  console.log(chalk.magenta.bold('=== Testing with PgAdapter ===\n'))
   for (const date of testDates) {
     console.log(chalk.yellow.bold(`Testing ${date.toISOString().split('T')[0]}:`))
-    await testCreateDate(date)
-    await testUpdateDate(date)
+    await testCreateDate(date, prismaWithAdapter)
+    await testUpdateDate(date, prismaWithAdapter)
     console.log()
   }
   
-  await prisma.$disconnect()
+  console.log(chalk.magenta.bold('=== Testing with Traditional Connection ===\n'))
+  for (const date of testDates) {
+    console.log(chalk.yellow.bold(`Testing ${date.toISOString().split('T')[0]}:`))
+    await testCreateDate(date, prismaTraditional)
+    await testUpdateDate(date, prismaTraditional)
+    console.log()
+  }
+  
+  await prismaWithAdapter.$disconnect()
+  await prismaTraditional.$disconnect()
   process.exit(0)
 }
 
